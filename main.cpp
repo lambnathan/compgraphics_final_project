@@ -474,7 +474,7 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
     //draw the model that we loaded in
     glm::mat4 scale = glm::scale(glm::mat4(1), glm::vec3(.1, .1, .1));
     mvpMtx *= scale;
-    glUseProgram(objectShaderHandle);
+    glUseProgram(objectShaderHandle); 
     // send MVP to GPU
     glUniformMatrix4fv(mvp_uniform_location_obj, 1, GL_FALSE, &mvpMtx[0][0]);
     //send camera pos to GPU

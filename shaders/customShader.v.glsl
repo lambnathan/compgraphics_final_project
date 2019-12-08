@@ -22,7 +22,7 @@ void main() {
     //*****************************************
 
     texCoords = vPosition;
-    camPos = eyePos;
+    camPos = eyePos; 
     fragPos = mvpMatrix * vec4(vPosition, 1.0);
     gl_Position = mvpMatrix * vec4(vPosition, 1.0);
 }

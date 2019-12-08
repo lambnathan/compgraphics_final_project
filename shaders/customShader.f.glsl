@@ -17,7 +17,6 @@ out vec4 fragColorOut;
 void main() {
 
 	vec4 theColor = texture(skybox, texCoords);
-
 	vec4 fogColor = vec4(.75, .75, 1, 1);
 	float fogDist = 100;
 
