@@ -466,22 +466,32 @@ void setupTextures(){
 //
 ////////////////////////////////////////////////////////////////////////////////
 void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
+    /////////////////////////////
+    /// MODEL STUFF
+    ////////////////////////////
   // stores our model matrix
   glm::mat4 modelMtx = glm::mat4(1.0f);
+  modelMtx = glm::scale(modelMtx, glm::vec3(15.0f, 15.0f, 15.0f)); //scale our object
+  modelMtx = glm::rotate(modelMtx, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //rotate the object
+
     // precompute our MVP CPU side so it only needs to be computed once
     glm::mat4 mvpMtx = projMtx * viewMtx * modelMtx;
-
     //draw the model that we loaded in
-    glm::mat4 scale = glm::scale(glm::mat4(1), glm::vec3(.1, .1, .1));
-    mvpMtx *= scale;
-    glUseProgram(objectShaderHandle); 
+    glUseProgram(objectShaderHandle);
     // send MVP to GPU
     glUniformMatrix4fv(mvp_uniform_location_obj, 1, GL_FALSE, &mvpMtx[0][0]);
     //send camera pos to GPU
     glUniform3fv(cam_pos_location, 1, &eyePoint[0]);
     model->draw(vpos_attrib_location_obj, norm_attrib_location);
-    mvpMtx *= glm::inverse(scale);
 
+    //reset model and mvp mtx to draw skybox
+    modelMtx = glm::mat4(1.0f);
+    mvpMtx = projMtx * viewMtx * modelMtx;
+
+
+    //////////////////////////////////
+    //SKYBOX STUFF
+    ////////////////////////////////
   // use our skybox shader program
   glUseProgram(skyboxShaderHandle);
     glUniformMatrix4fv(mvp_uniform_location_box, 1, GL_FALSE, &mvpMtx[0][0]);
