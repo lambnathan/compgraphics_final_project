@@ -65,6 +65,7 @@ GLuint objectShaderHandle = 0;
 GLuint propShaderHandle = 0;
 
 GLint mvp_uniform_location_box = -1;
+GLint eye_uniform_location_box = -1;
 GLint vpos_attrib_location_box = -1;
 
 //atribute locations for uav
@@ -333,6 +334,11 @@ void setupShaders() {
 		cerr << "Error getting mvp uniform location for skybox" << endl;
 		exit(-1);
 	}
+    eye_uniform_location_box = glGetUniformLocation(skyboxShaderHandle, "eyePos");
+    if(eye_uniform_location_box < 0){
+        cerr << "Error getting eyepos uniform location for skybox" << endl;
+        exit(-1);
+    }
 	vpos_attrib_location_box = glGetAttribLocation(skyboxShaderHandle, "vPosition");
 	if(vpos_attrib_location_box < 0){
 		cerr << "Error getting vPosition for skybox" << endl;
@@ -526,7 +532,6 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
     mvpMtx = projMtx * viewMtx * modelMtx;
     //draw the model that we loaded in
     glUseProgram(objectShaderHandle);
-
     // send MVP to GPU
     glUniformMatrix4fv(mvp_uniform_location_obj, 1, GL_FALSE, &mvpMtx[0][0]);
     //send camera pos to GPU
@@ -544,6 +549,7 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
   // use our skybox shader program
   glUseProgram(skyboxShaderHandle);
     glUniformMatrix4fv(mvp_uniform_location_box, 1, GL_FALSE, &mvpMtx[0][0]);
+    glUniform3fv(eye_uniform_location_box, 1, &eyePoint[0]);
   glDepthFunc(GL_LEQUAL);
   //glDepthMask(GL_FALSE);
   glActiveTexture(GL_TEXTURE0);
