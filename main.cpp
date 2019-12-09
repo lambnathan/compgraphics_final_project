@@ -56,19 +56,31 @@ glm::vec3 eyePoint(   10.0f, 10.0f, 10.0f );
 glm::vec3 lookAtPoint( 0.0f,  0.0f,  0.0f );
 glm::vec3 upVector(    0.0f,  1.0f,  0.0f );
 
+GLfloat propAngle = 0.0f;
+
 CSCI441::ModelLoader* model = NULL;
+CSCI441::ModelLoader* propModel = NULL;
 
 GLuint skyboxShaderHandle = 0;
 GLuint objectShaderHandle = 0;
+GLuint propShaderHandle = 0;
 
 GLint mvp_uniform_location_box = -1;
 GLint eye_uniform_location_box = -1;
 GLint vpos_attrib_location_box = -1;
 
+//atribute locations for uav
 GLint mvp_uniform_location_obj = -1;
 GLint vpos_attrib_location_obj = -1;
 GLint norm_attrib_location = -1;
 GLint cam_pos_location = -1;
+
+//attribute locations for propeller
+GLint mvp_uniform_location_prop = -1;
+GLint vpos_attrib_location_prop = -1;
+GLint norm_attrib_location_prop = -1;
+GLint cam_pos_location_prop = -1;
+GLint rotation_location_prop = -1;
 
 //vbo and vao for skybox
 GLuint skyboxVBO;
@@ -360,6 +372,13 @@ void setupShaders() {
 	    exit(-1);
 	}
 
+	//set up stuff for the propeller shader
+	propShaderHandle = createShaderProgram("shaders/propShader.v.glsl", "shaders/propShader.f.glsl");
+	mvp_uniform_location_prop = glGetUniformLocation(propShaderHandle, "mvpMatrix");
+	vpos_attrib_location_prop = glGetAttribLocation(propShaderHandle, "vPosition");
+	norm_attrib_location_prop = glGetAttribLocation(propShaderHandle, "normal");
+	cam_pos_location_prop = glGetUniformLocation(propShaderHandle, "camPos");
+	rotation_location_prop = glGetUniformLocation(propShaderHandle, "rotation");
 }
 
 // setupBuffers() //////////////////////////////////////////////////////////////
@@ -424,6 +443,9 @@ void setupBuffers(string obj) {
     //load the specified model
     model = new CSCI441::ModelLoader();
     model->loadModelFile( obj.c_str() );
+
+    propModel = new CSCI441::ModelLoader();
+    propModel->loadModelFile("models/prop2.obj");
 }
 
 //takes in a vector of strings of the files for the skybox and loads them
@@ -468,6 +490,8 @@ void setupTextures(){
     cout << skyboxID << " handle " << sandboxID << endl;
 }
 
+
+
 //******************************************************************************
 //
 // Rendering / Drawing Functions - this is where the magic happens!
@@ -478,16 +502,46 @@ void setupTextures(){
 //
 ////////////////////////////////////////////////////////////////////////////////
 void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
+
     /////////////////////////////
     /// MODEL STUFF
     ////////////////////////////
+
+    //draw the propeller DO NOT CHANGE ANY OF THESE TRANSFORMATIONS
+    glm::mat4 modelMtx = glm::mat4(1.0f);
+    modelMtx = glm::translate(modelMtx, glm::vec3(-0.052f, -0.3f, 1.25f));
+    modelMtx = glm::rotate(modelMtx, glm::radians(270.0f), glm::vec3(1.0, 0.0, 0.0));
+    modelMtx = glm::scale(modelMtx, glm::vec3(0.1, 0.1, 0.1));
+
+    modelMtx = glm::translate(modelMtx, glm::vec3(0.0f, 0.0f, 2.9f));
+    modelMtx = glm::rotate(modelMtx, propAngle, glm::vec3(0.0f, 1.0f, 0.0f)); //rotate the object
+    modelMtx = glm::translate(modelMtx, glm::vec3(0.0f, 0.0f, -2.9f));
+
+    propAngle += M_PI / 16.0f;
+    if( propAngle > 2 * M_PI ) propAngle -= 2 * M_PI;
+
+//    propAngle += 0.1f;
+//    if(propAngle == 100000) propAngle = 0;
+    // precompute our MVP CPU side so it only needs to be computed once
+    glm::mat4 mvpMtx = projMtx * viewMtx * modelMtx;
+    //draw the model that we loaded in
+    glUseProgram(propShaderHandle);
+    // send MVP to GPU
+    glUniformMatrix4fv(mvp_uniform_location_prop, 1, GL_FALSE, &mvpMtx[0][0]);
+    //send camera pos to GPU
+    glUniform3fv(cam_pos_location_prop, 1, &eyePoint[0]);
+    glUniform1f(rotation_location_prop, propAngle); //send in prop angle to shader
+    propModel->draw(vpos_attrib_location_prop, norm_attrib_location_prop);
+
+
+    //draw the uav
   // stores our model matrix
-  glm::mat4 modelMtx = glm::mat4(1.0f);
+  modelMtx = glm::mat4(1.0f);
   modelMtx = glm::scale(modelMtx, glm::vec3(15.0f, 15.0f, 15.0f)); //scale our object
   modelMtx = glm::rotate(modelMtx, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //rotate the object
 
     // precompute our MVP CPU side so it only needs to be computed once
-    glm::mat4 mvpMtx = projMtx * viewMtx * modelMtx;
+    mvpMtx = projMtx * viewMtx * modelMtx;
     //draw the model that we loaded in
     glUseProgram(objectShaderHandle);
     // send MVP to GPU
@@ -581,6 +635,7 @@ int main( int argc, char *argv[] ) {
 
   // needed to connect our 3D Object Library to our shader
 	CSCI441::setVertexAttributeLocations( vpos_attrib_location_obj, norm_attrib_location );
+    CSCI441::setVertexAttributeLocations(vpos_attrib_location_prop, norm_attrib_location_prop);
 
 	convertSphericalToCartesian();		// set up our camera position
 
