@@ -33,6 +33,7 @@
 #include <CSCI441/objects3.hpp>     // to render our 3D primitives
 
 #include "include/Shader_Utils.h"   // our shader helper functions
+#include "include/Terrain.h"
 
 //image loader, used to load in pictures for skybox
 //#define STB_IMAGE_IMPLEMENTATION
@@ -73,6 +74,9 @@ GLint cam_pos_location = -1;
 GLuint skyboxVBO;
 GLuint skyboxVAO;
 unsigned int skyboxID; //holds texture
+unsigned int sandboxID;
+
+Terrain ground(50, 10, 0);
 
 //******************************************************************************
 //
@@ -429,6 +433,7 @@ unsigned int loadCubeMap(vector<string> faces){
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
     for(unsigned int i = 0; i < faces.size(); i++){
+        cout << i << endl;
         int width, height, n;
         unsigned char* imageData = SOIL_load_image(faces[i].c_str(), &width, &height, &n, 0);
         if (!imageData) {
@@ -444,16 +449,23 @@ unsigned int loadCubeMap(vector<string> faces){
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
 }
 
 //load all of our textures into memory
 void setupTextures(){
     //get skybox texture by loading all the images
+    vector<string> sand = {"textures/sand.v4.jpg", "textures/sand.v4.jpg", "textures/sand.v4.jpg",
+                           "textures/sand.v4.jpg", "textures/sand.v4.jpg", "textures/sand.v4.jpg"};
     vector<string> faces = {"textures/skybox/hw_sahara/posx.jpg", "textures/skybox/hw_sahara/negx.jpg",
                             "textures/skybox/hw_sahara/posy.jpg", "textures/skybox/hw_sahara/negy.jpg",
                             "textures/skybox/hw_sahara/posz.jpg", "textures/skybox/hw_sahara/negz.jpg"};
     skyboxID = loadCubeMap(faces);
+    sandboxID = loadCubeMap(sand);
+//    ground.setTexHandle(sandboxID);
 
+    cout << skyboxID << " handle " << sandboxID << endl;
 }
 
 //******************************************************************************
@@ -496,15 +508,19 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
   glUseProgram(skyboxShaderHandle);
     glUniformMatrix4fv(mvp_uniform_location_box, 1, GL_FALSE, &mvpMtx[0][0]);
     glUniform3fv(eye_uniform_location_box, 1, &eyePoint[0]);
+
   glDepthFunc(GL_LEQUAL);
   //glDepthMask(GL_FALSE);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxID);
   glBindVertexArray(skyboxVAO);
   glDrawArrays(GL_TRIANGLES, 0, 36);
+  
+    glBindTexture(GL_TEXTURE_CUBE_MAP, sandboxID);
+    ground.draw(mvpMtx, mvp_uniform_location_box);
+
   //glDepthMask(GL_TRUE);
   glDepthFunc(GL_LESS);
-
 }
 
 ///*****************************************************************************
