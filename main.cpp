@@ -67,6 +67,7 @@ GLfloat propAngle = 0.0f;
 
 CSCI441::ModelLoader* model = NULL;
 CSCI441::ModelLoader* propModel = NULL;
+GLuint modelTextureHandle;
 
 GLuint skyboxShaderHandle = 0;
 GLuint objectShaderHandle = 0;
@@ -84,6 +85,7 @@ GLint norm_attrib_location = -1;
 GLint cam_pos_location = -1;
 GLint time_uniform_location = -1;
 GLint vdir_uniform_location_obj = -1;
+GLint vTex_attrib_location = -1;
 
 //attribute locations for propeller
 GLint mvp_uniform_location_prop = -1;
@@ -487,7 +489,6 @@ void setupShaders() {
         std::cout << "time loc Not Created" << std::endl;
     }
     norm_attrib_location = glGetAttribLocation(objectShaderHandle, "normal");
-    norm_attrib_location = glGetAttribLocation(objectShaderHandle, "normal");
     if(norm_attrib_location < 0){
         cerr << "Error getting object normal location" << endl;
         exit(-1);
@@ -500,6 +501,11 @@ void setupShaders() {
     vdir_uniform_location_obj = glGetUniformLocation(objectShaderHandle, "dir");
     if(vdir_uniform_location_obj < 0){
         cerr << "Error getting object normal location" << endl;
+        exit(-1);
+    }
+    vTex_attrib_location = glGetAttribLocation(objectShaderHandle, "vTexCoord");
+    if(vTex_attrib_location < 0){
+        cerr << "Error getting object tex location" << endl;
         exit(-1);
     }
 
@@ -615,6 +621,8 @@ void setupTextures(){
                             "textures/skybox/hw_sahara/posz.jpg", "textures/skybox/hw_sahara/negz.jpg"};
     skyboxID = loadCubeMap(faces);
     sandboxID = loadCubeMap(sand);
+
+    modelTextureHandle = CSCI441::TextureUtils::loadAndRegisterTexture("textures/metal.jpg");
 }
 
 
@@ -682,6 +690,8 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
     //draw the model that we loaded in
     glUseProgram(objectShaderHandle);
     // send MVP to GPU
+
+
     glUniformMatrix4fv(mvp_uniform_location_obj, 1, GL_FALSE, &mvpMtx[0][0]);
     double time = glfwGetTime();
     glUniform1f(time_uniform_location, time);
@@ -689,7 +699,9 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
     glUniform3fv(cam_pos_location, 1, &objectPosistion[0]);
     glUniform3fv(vdir_uniform_location_obj, 1, &objectDirection[0]);
 
-    model->draw(vpos_attrib_location_obj, norm_attrib_location);
+    glBindTexture( GL_TEXTURE_2D, modelTextureHandle );
+
+    model->draw(vpos_attrib_location_obj, norm_attrib_location, vTex_attrib_location);
 
     //reset model and mvp mtx to draw skybox
     modelMtx = glm::mat4(1.0f);
