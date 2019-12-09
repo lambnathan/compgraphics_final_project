@@ -49,6 +49,7 @@ int windowWidth, windowHeight;
 
 bool controlDown = false;
 bool leftMouseDown = false;
+bool camSwap = true;
 bool keysDown[256] = { 0 };           // status of our keys
 
 glm::vec2 mousePosition( -9999.0f, -9999.0f );
@@ -115,6 +116,12 @@ void recomputeCameraOrientation() {
 	
 }
 
+void firstCameraOrientation() {
+    eyePoint.x = objectPosistion.x;
+    eyePoint.y = objectPosistion.y;
+    eyePoint.z = objectPosistion.z -5;
+}
+
 void recomputeOrientation() {
 	objectDirection.x = sinf(objectRotation.y) * sinf(objectRotation.x);
 	objectDirection.z = cosf(objectRotation.y) * sinf(objectRotation.x);
@@ -155,6 +162,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			break;
 		case GLFW_KEY_1:
 			//lightOne = !(lightOne);
+			camSwap = !(camSwap);
 			break;
 
 		case GLFW_KEY_2:
@@ -188,7 +196,8 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
   //controlDown = mods & GLFW_MOD_CONTROL;
 }
 void animate() {
-	recomputeCameraOrientation();
+    recomputeCameraOrientation();
+
 	recomputeOrientation();
 	//because the direction vector is unit length, and we probably don't want
 	//to move one full unit every time a button is pressed, just create a constant
@@ -749,9 +758,19 @@ int main( int argc, char *argv[] ) {
 
 		// set up our look at matrix to position our camera
 	std:cout << objectDirection.x << " " << objectDirection.y << " " << objectDirection.z << std::endl;
-		glm::mat4 viewMatrix = glm::lookAt(eyePoint,
-										   glm::vec3(objectPosistion.x, objectPosistion.y, objectPosistion.z),
-										   upVector );
+//        std:cout << objectPosistion.x << " " << objectPosistion.y << " " << objectPosistion.z << std::endl;
+        glm::mat4 viewMatrix;
+	    if(camSwap) {
+            upVector = glm::vec3(    0.0f,  1.0f,  0.0f );
+            viewMatrix = glm::lookAt(eyePoint,
+                                               glm::vec3(objectPosistion.x, objectPosistion.y, objectPosistion.z),
+                                               upVector );
+        } else {
+//            upVector = glm::vec3(    objectRotation.x,  1.0f, 0.0f);
+            viewMatrix = glm::lookAt(glm::vec3(objectPosistion.x, objectPosistion.y+1, objectPosistion.z),
+                                     glm::vec3(objectPosistion.x, objectPosistion.y- objectDirection.y+1, objectPosistion.z- objectDirection.z),
+                                               upVector );
+	    }
 
 		// draw everything to the window
 		// pass our view and projection matrices as well as deltaTime between frames
