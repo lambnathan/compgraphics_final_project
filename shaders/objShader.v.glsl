@@ -10,6 +10,7 @@ out vec3 theColor;
 
 uniform mat4 mvpMatrix;
 uniform vec3 camPos;
+uniform float time;
 
 void main(){
     vec3 lightColor = vec3(1.0, 1.0, 1.0); //white
@@ -39,5 +40,11 @@ void main(){
     vec3 result = (ambient + diffuse + specular) * objectColor;
 
     theColor = result;
-    gl_Position = mvpMatrix * vec4(vPosition, 1.0);
+    vec3 newVertex = vPosition;
+    if(vPosition.x > 0.05 || vPosition.x < -0.05){
+	newVertex.z = (vPosition.x*vPosition.x)*sin(25*time)*3;
+    }
+
+
+    gl_Position = mvpMatrix * vec4(newVertex , 1.0);
 }
