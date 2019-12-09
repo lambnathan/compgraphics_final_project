@@ -61,6 +61,7 @@ glm::vec3 upVector(    0.0f,  1.0f,  0.0f );
 glm::vec3 objectRotation(4.7124f, 0.0f, 0.0f);
 glm::vec3 objectDirection(0.0f, 0.0f, 0.5f);
 glm::vec3 objectPosistion(0.0f, 0.0f, 0.0f);
+float pitch = 0, yaw = 0, roll = 0;
 
 GLfloat propAngle = 0.0f;
 
@@ -108,12 +109,28 @@ Terrain ground(50, 10, 0);
 //  cameraAngles is updated.
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+/*
+ * rotate about heading by roll
+ * rotate about heading x normal by pitch
+ * dir(0) = +z
+ *
+ * y direction = sin(pitch)
+ * x direction = sin(yaw)
+ * z direction = cos(yaw
+ */
+
+glm::vec3 getHeading(float pitch, float yaw, float roll) {
+    
+}
+glm::vec3 getNormal(float pitch, float yaw, float roll) {
+
+}
+
 void recomputeCameraOrientation() {
 	eyePoint.x = 10 * sinf( cameraAngles.x ) * sinf( cameraAngles.y ) + objectPosistion.x;
 	eyePoint.y = 10 * -cosf( cameraAngles.y ) + objectPosistion.y;
 	eyePoint.z = 10 * -cosf( cameraAngles.x ) * sinf( cameraAngles.y ) + objectPosistion.z;
-
-	
 }
 
 void firstCameraOrientation() {
@@ -195,6 +212,7 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 	}
   //controlDown = mods & GLFW_MOD_CONTROL;
 }
+
 void animate() {
     recomputeCameraOrientation();
 
@@ -207,9 +225,7 @@ void animate() {
 	const float movementConstant = 0.1f;
 
 	if (keysDown[GLFW_KEY_SPACE]) {
-		objectPosistion.x -= objectDirection.x * movementConstant;
-		objectPosistion.y -= objectDirection.y * movementConstant;
-		objectPosistion.z -= objectDirection.z * movementConstant;
+	    objectPosistion -= objectDirection * movementConstant;
 		//just move FORWARDS along the direction.
 		//camPos.x += camDir.x * movementConstant;
 		//camPos.y += camDir.y * movementConstant;
@@ -220,16 +236,22 @@ void animate() {
 
 	}
 	if (keysDown[GLFW_KEY_S]) {
+	    pitch += 0.01;
+
 		objectRotation.x -= 0.01;
 		recomputeOrientation();
 	}
 
 	if (keysDown[GLFW_KEY_W]) {
+	    pitch -= 0.01;
+
 		objectRotation.x += 0.01;
 		recomputeOrientation();
 	}
 
 	if (keysDown[GLFW_KEY_D]) {
+	    roll -= 0.01;
+
 		// turn right
 		if (objectRotation.y > -.85) {
 			objectRotation.y -= 0.01;
@@ -238,6 +260,8 @@ void animate() {
 	}
 
 	if (keysDown[GLFW_KEY_A]) {
+	    roll += 0.01;
+
 		// turn left
 		if (objectRotation.y < .85) {
 			objectRotation.y += 0.01;
