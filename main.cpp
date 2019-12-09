@@ -75,6 +75,7 @@ GLuint propShaderHandle = 0;
 GLint mvp_uniform_location_box = -1;
 GLint eye_uniform_location_box = -1;
 GLint vpos_attrib_location_box = -1;
+GLint time_uniform_location_box = -1;
 
 //atribute locations for uav
 GLint mvp_uniform_location_obj = -1;
@@ -152,11 +153,6 @@ void recomputeCameraOrientation() {
     eyePoint.z = 10 * -cosf( cameraAngles.x ) * sinf( cameraAngles.y ) + objectPosistion.z;
 }
 
-void firstCameraOrientation() {
-    eyePoint.x = objectPosistion.x;
-    eyePoint.y = objectPosistion.y;
-    eyePoint.z = objectPosistion.z -5;
-}
 
 void recomputeOrientation() {
     objectDirection.x = sinf(objectRotation.y) * sinf(objectRotation.x);
@@ -464,6 +460,12 @@ void setupShaders() {
         cerr << "Error getting vPosition for skybox" << endl;
         exit(-1);
     }
+    time_uniform_location_box = glGetUniformLocation(skyboxShaderHandle, "time");
+    if(time_uniform_location_box < 0){
+        cerr << "Error getting time for skybox" << endl;
+        exit(-1);
+    }
+
 
     //for our loaded in object
     objectShaderHandle = createShaderProgram("shaders/objShader.v.glsl", "shaders/objShader.f.glsl");
@@ -701,6 +703,7 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
     glUseProgram(skyboxShaderHandle);
     glUniformMatrix4fv(mvp_uniform_location_box, 1, GL_FALSE, &mvpMtx[0][0]);
     glUniform3fv(eye_uniform_location_box, 1, &eyePoint[0]);
+    glUniform1f(time_uniform_location_box, time);
 
     glDepthFunc(GL_LEQUAL);
     //glDepthMask(GL_FALSE);
@@ -803,7 +806,6 @@ int main( int argc, char *argv[] ) {
 //        std:cout << objectDirection.x << " " << objectDirection.y << " " << objectDirection.z << std::endl;
 //        std:cout << objectPosistion.x << " " << objectPosistion.y << " " << objectPosistion.z << std::endl;
         glm::mat4 viewMatrix;
-
         if(camSwap) {
             upVector = glm::vec3(    0.0f,  1.0f,  0.0f );
             lookAtPoint = glm::vec3(objectPosistion.x, objectPosistion.y, objectPosistion.z);
