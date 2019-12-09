@@ -82,6 +82,7 @@ GLint vpos_attrib_location_obj = -1;
 GLint norm_attrib_location = -1;
 GLint cam_pos_location = -1;
 GLint time_uniform_location = -1;
+GLint vdir_uniform_location_obj = -1;
 
 //attribute locations for propeller
 GLint mvp_uniform_location_prop = -1;
@@ -478,6 +479,11 @@ void setupShaders() {
 	    cerr << "Error getting cam pos location" << endl;
 	    exit(-1);
 	}
+    vdir_uniform_location_obj = glGetUniformLocation(objectShaderHandle, "dir");
+    if(vdir_uniform_location_obj < 0){
+        cerr << "Error getting object normal location" << endl;
+        exit(-1);
+    }
 
 	//set up stuff for the propeller shader
 	propShaderHandle = createShaderProgram("shaders/propShader.v.glsl", "shaders/propShader.f.glsl");
@@ -667,6 +673,7 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
 	glUniform1f(time_uniform_location, time);
     //send camera pos to GPU
     glUniform3fv(cam_pos_location, 1, &objectPosistion[0]);
+    glUniform3fv(vdir_uniform_location_obj, 1, &objectDirection[0]);
 	
     model->draw(vpos_attrib_location_obj, norm_attrib_location);
 
