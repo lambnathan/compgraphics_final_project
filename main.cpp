@@ -122,16 +122,34 @@ Terrain ground(50, 10, 0);
  */
 
 glm::vec3 getHeading(float pitch, float yaw, float roll) {
-    
+
 }
 glm::vec3 getNormal(float pitch, float yaw, float roll) {
 
 }
+glm::vec3 toEuler(glm::vec3 cartesian) {
+    float lastPitch = atan(cartesian.y / cartesian.z) + (cartesian.z < 0 ? M_PI : 0);
+    float lastYaw = atan(cartesian.x / cartesian.z) + (cartesian.z < 0 ? M_PI : 0);
+    float lastRoll = atan(cartesian.y / cartesian.x) + (cartesian.x < 0 ? M_PI : 0);
+
+    return glm::vec3(lastPitch, lastYaw, lastRoll);
+}
+glm::vec3 toCartesian(glm::vec3 euler) {
+    glm::mat4 conversion(1);
+    conversion = glm::rotate(conversion, euler.x, glm::vec3(1, 0, 0)); //rotate by pitch about x axis
+    conversion = glm::rotate(conversion, euler.y, glm::vec3(0, 1, 0)); //rotate by yaw about y
+    conversion = glm::rotate(conversion, euler.z, glm::vec3(0, 0, 1)); //rotate by roll about z
+
+    glm::vec4 coords = glm::vec4(euler, 1);
+
+    coords = conversion * coords;
+    return glm::vec3(coords.z, coords.y, coords.x);
+}
 
 void recomputeCameraOrientation() {
-	eyePoint.x = 10 * sinf( cameraAngles.x ) * sinf( cameraAngles.y ) + objectPosistion.x;
-	eyePoint.y = 10 * -cosf( cameraAngles.y ) + objectPosistion.y;
-	eyePoint.z = 10 * -cosf( cameraAngles.x ) * sinf( cameraAngles.y ) + objectPosistion.z;
+    eyePoint.x = 10 * sinf( cameraAngles.x ) * sinf( cameraAngles.y ) + objectPosistion.x;
+    eyePoint.y = 10 * -cosf( cameraAngles.y ) + objectPosistion.y;
+    eyePoint.z = 10 * -cosf( cameraAngles.x ) * sinf( cameraAngles.y ) + objectPosistion.z;
 }
 
 void firstCameraOrientation() {
@@ -141,12 +159,12 @@ void firstCameraOrientation() {
 }
 
 void recomputeOrientation() {
-	objectDirection.x = sinf(objectRotation.y) * sinf(objectRotation.x);
-	objectDirection.z = cosf(objectRotation.y) * sinf(objectRotation.x);
-	objectDirection.y = cosf(objectRotation.x);
+    objectDirection.x = sinf(objectRotation.y) * sinf(objectRotation.x);
+    objectDirection.z = cosf(objectRotation.y) * sinf(objectRotation.x);
+    objectDirection.y = cosf(objectRotation.x);
 
-	//and normalize this directional vector!
-	objectDirection = glm::normalize(objectDirection);
+    //and normalize this directional vector!
+    objectDirection = glm::normalize(objectDirection);
 }
 
 //******************************************************************************
@@ -162,7 +180,7 @@ void recomputeOrientation() {
 //
 ////////////////////////////////////////////////////////////////////////////////
 static void error_callback(int error, const char* description) {
-	fprintf(stderr, "[ERROR]: %s\n", description);
+    fprintf(stderr, "[ERROR]: %s\n", description);
 }
 
 // key_callback() //////////////////////////////////////////////////////////////
@@ -172,27 +190,27 @@ static void error_callback(int error, const char* description) {
 //
 ////////////////////////////////////////////////////////////////////////////////
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	if (action == GLFW_PRESS) {
-		switch (key) {
-		case GLFW_KEY_ESCAPE:
-		case GLFW_KEY_Q:
-			glfwSetWindowShouldClose(window, GLFW_TRUE);
-			break;
-		case GLFW_KEY_1:
-			//lightOne = !(lightOne);
-			camSwap = !(camSwap);
-			break;
+    if (action == GLFW_PRESS) {
+        switch (key) {
+            case GLFW_KEY_ESCAPE:
+            case GLFW_KEY_Q:
+                glfwSetWindowShouldClose(window, GLFW_TRUE);
+                break;
+            case GLFW_KEY_1:
+                //lightOne = !(lightOne);
+                camSwap = !(camSwap);
+                break;
 
-		case GLFW_KEY_2:
-			//lightTwo = !(lightTwo);
+            case GLFW_KEY_2:
+                //lightTwo = !(lightTwo);
 
-		default:
-			keysDown[key] = true;
-		}
-	}
-	else if (action == GLFW_RELEASE) {
-		keysDown[key] = false;
-	}
+            default:
+                keysDown[key] = true;
+        }
+    }
+    else if (action == GLFW_RELEASE) {
+        keysDown[key] = false;
+    }
 }
 
 // mouse_button_callback() /////////////////////////////////////////////////////
@@ -204,71 +222,68 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 //
 ////////////////////////////////////////////////////////////////////////////////
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if( button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ) {
-		leftMouseDown = true;
-	} else {
-		leftMouseDown = false;
-		mousePosition.x = -9999.0f;
-		mousePosition.y = -9999.0f;
-	}
-  //controlDown = mods & GLFW_MOD_CONTROL;
+    if( button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS ) {
+        leftMouseDown = true;
+    } else {
+        leftMouseDown = false;
+        mousePosition.x = -9999.0f;
+        mousePosition.y = -9999.0f;
+    }
+    //controlDown = mods & GLFW_MOD_CONTROL;
 }
 
 void animate() {
     recomputeCameraOrientation();
 
-	recomputeOrientation();
-	//because the direction vector is unit length, and we probably don't want
-	//to move one full unit every time a button is pressed, just create a constant
-	//to keep track of how far we want to move at each step. you could make
-	//this change w.r.t. the amount of time the button's held down for
-	//simple scale-sensitive movement!
-	const float movementConstant = 0.1f;
+    recomputeOrientation();
+    //because the direction vector is unit length, and we probably don't want
+    //to move one full unit every time a button is pressed, just create a constant
+    //to keep track of how far we want to move at each step. you could make
+    //this change w.r.t. the amount of time the button's held down for
+    //simple scale-sensitive movement!
+    const float movementConstant = 0.1f;
 
-	if (keysDown[GLFW_KEY_SPACE]) {
+    if (keysDown[GLFW_KEY_SPACE]) {
 	    objectPosistion -= objectDirection * movementConstant;
-		//just move FORWARDS along the direction.
-		//camPos.x += camDir.x * movementConstant;
-		//camPos.y += camDir.y * movementConstant;
-		//camPos.z += camDir.z * movementConstant;
+//        objectPosistion -= toCartesian(glm::vec3(pitch, yaw, roll)) * movementConstant;
+        //just move FORWARDS along the direction.
+        //camPos.x += camDir.x * movementConstant;
+        //camPos.y += camDir.y * movementConstant;
+        //camPos.z += camDir.z * movementConstant;
 
-		//propAngle += M_PI / 16.0f;
-		//if (propAngle > 2 * M_PI) propAngle -= 2 * M_PI;
+        //propAngle += M_PI / 16.0f;
+        //if (propAngle > 2 * M_PI) propAngle -= 2 * M_PI;
 
-	}
-	if (keysDown[GLFW_KEY_S]) {
-	    pitch += 0.01;
+    }
+    if (keysDown[GLFW_KEY_S]) {
+        pitch -= 0.01;
 
-		objectRotation.x -= 0.01;
-		recomputeOrientation();
-	}
+        objectRotation.x -= 0.01;
+        recomputeOrientation();
+    }
 
-	if (keysDown[GLFW_KEY_W]) {
-	    pitch -= 0.01;
+    if (keysDown[GLFW_KEY_W]) {
+        pitch += 0.01;
 
-		objectRotation.x += 0.01;
-		recomputeOrientation();
-	}
+        objectRotation.x += 0.01;
+        recomputeOrientation();
+    }
 
-	if (keysDown[GLFW_KEY_D]) {
-	    roll -= 0.01;
+    if (keysDown[GLFW_KEY_D]) {
+        roll -= 0.01;
 
-		// turn right
-		if (objectRotation.y > -.85) {
-			objectRotation.y -= 0.01;
-		}
-		//cameraAngles.z += 0.01;
-	}
+        // turn right
+        objectRotation.y -= 0.01;
+        //cameraAngles.z += 0.01;
+    }
 
-	if (keysDown[GLFW_KEY_A]) {
-	    roll += 0.01;
+    if (keysDown[GLFW_KEY_A]) {
+        roll += 0.01;
 
-		// turn left
-		if (objectRotation.y < .85) {
-			objectRotation.y += 0.01;
-		}
-		//cameraAngles.z -= 0.01;
-	}
+        // turn left
+        objectRotation.y += 0.01;
+        //cameraAngles.z -= 0.01;
+    }
 
 }
 
@@ -280,41 +295,41 @@ void animate() {
 //
 ////////////////////////////////////////////////////////////////////////////////
 static void cursor_callback(GLFWwindow* window, double xpos, double ypos) {
-	// make sure movement is in bounds of the window
-	// glfw captures mouse movement on entire screen
-	if( xpos > 0 && xpos < windowWidth ) {
-		if( ypos > 0 && ypos < windowHeight ) {
-			// active motion
-			if( leftMouseDown ) {
-				if( (mousePosition.x - -9999.0f) < 0.001f ) {
-					mousePosition.x = xpos;
-					mousePosition.y = ypos;
-				} else {
-					if( !controlDown ) {
-						cameraAngles.x += (xpos - mousePosition.x)*0.005f;
-						cameraAngles.y += (ypos - mousePosition.y)*0.005f;
+    // make sure movement is in bounds of the window
+    // glfw captures mouse movement on entire screen
+    if( xpos > 0 && xpos < windowWidth ) {
+        if( ypos > 0 && ypos < windowHeight ) {
+            // active motion
+            if( leftMouseDown ) {
+                if( (mousePosition.x - -9999.0f) < 0.001f ) {
+                    mousePosition.x = xpos;
+                    mousePosition.y = ypos;
+                } else {
+                    if( !controlDown ) {
+                        cameraAngles.x += (xpos - mousePosition.x)*0.005f;
+                        cameraAngles.y += (ypos - mousePosition.y)*0.005f;
 
-						if( cameraAngles.y < 0 ) cameraAngles.y = 0.0f + 0.001f;
-						if( cameraAngles.y >= M_PI ) cameraAngles.y = M_PI - 0.001f;
-					} else {
-						double totChgSq = (xpos - mousePosition.x) + (ypos - mousePosition.y);
-						cameraAngles.z += totChgSq*0.01f;
+                        if( cameraAngles.y < 0 ) cameraAngles.y = 0.0f + 0.001f;
+                        if( cameraAngles.y >= M_PI ) cameraAngles.y = M_PI - 0.001f;
+                    } else {
+                        double totChgSq = (xpos - mousePosition.x) + (ypos - mousePosition.y);
+                        cameraAngles.z += totChgSq*0.01f;
 
-						if( cameraAngles.z <= 2.0f ) cameraAngles.z = 2.0f;
-						if( cameraAngles.z >= 50.0f ) cameraAngles.z = 50.0f;
-					}
-					//convertSphericalToCartesian();
+                        if( cameraAngles.z <= 2.0f ) cameraAngles.z = 2.0f;
+                        if( cameraAngles.z >= 50.0f ) cameraAngles.z = 50.0f;
+                    }
+                    //convertSphericalToCartesian();
 
-					mousePosition.x = xpos;
-					mousePosition.y = ypos;
-				}
-			}
-			// passive motion
-			else {
+                    mousePosition.x = xpos;
+                    mousePosition.y = ypos;
+                }
+            }
+                // passive motion
+            else {
 
-			}
-		}
-	}
+            }
+        }
+    }
 }
 
 // scroll_callback() ///////////////////////////////////////////////////////////
@@ -325,13 +340,13 @@ static void cursor_callback(GLFWwindow* window, double xpos, double ypos) {
 //
 ////////////////////////////////////////////////////////////////////////////////
 static void scroll_callback(GLFWwindow* window, double xOffset, double yOffset ) {
-	double totChgSq = yOffset;
-	cameraAngles.z += totChgSq*0.01f;
+    double totChgSq = yOffset;
+    cameraAngles.z += totChgSq*0.01f;
 
-	if( cameraAngles.z <= 2.0f ) cameraAngles.z = 2.0f;
-	if( cameraAngles.z >= 50.0f ) cameraAngles.z = 50.0f;
+    if( cameraAngles.z <= 2.0f ) cameraAngles.z = 2.0f;
+    if( cameraAngles.z >= 50.0f ) cameraAngles.z = 50.0f;
 
-	//convertSphericalToCartesian();
+    //convertSphericalToCartesian();
 }
 
 //******************************************************************************
@@ -345,43 +360,43 @@ static void scroll_callback(GLFWwindow* window, double xOffset, double yOffset )
 //
 ////////////////////////////////////////////////////////////////////////////////
 GLFWwindow* setupGLFW() {
-	// set what function to use when registering errors
-	// this is the ONLY GLFW function that can be called BEFORE GLFW is initialized
-	// all other GLFW calls must be performed after GLFW has been initialized
-	glfwSetErrorCallback(error_callback);
+    // set what function to use when registering errors
+    // this is the ONLY GLFW function that can be called BEFORE GLFW is initialized
+    // all other GLFW calls must be performed after GLFW has been initialized
+    glfwSetErrorCallback(error_callback);
 
-	// initialize GLFW
-	if (!glfwInit()) {
-		fprintf( stderr, "[ERROR]: Could not initialize GLFW\n" );
-		exit(EXIT_FAILURE);
-	} else {
-		fprintf( stdout, "[INFO]: GLFW initialized\n" );
-	}
+    // initialize GLFW
+    if (!glfwInit()) {
+        fprintf( stderr, "[ERROR]: Could not initialize GLFW\n" );
+        exit(EXIT_FAILURE);
+    } else {
+        fprintf( stdout, "[INFO]: GLFW initialized\n" );
+    }
 
-	glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );						// request forward compatible OpenGL context
-	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );	// request OpenGL Core Profile context
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );		// request OpenGL 3.x context
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );		// request OpenGL 3.3 context
+    glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );						// request forward compatible OpenGL context
+    glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );	// request OpenGL Core Profile context
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );		// request OpenGL 3.x context
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );		// request OpenGL 3.3 context
 
-	// create a window for a given size, with a given title
-	GLFWwindow *window = glfwCreateWindow(640, 480, "The Grand (Re)Opening!", NULL, NULL);
-	if( !window ) {						// if the window could not be created, NULL is returned
-		fprintf( stderr, "[ERROR]: GLFW Window could not be created\n" );
-		glfwTerminate();
-		exit( EXIT_FAILURE );
-	} else {
-		fprintf( stdout, "[INFO]: GLFW Window created\n" );
-	}
+    // create a window for a given size, with a given title
+    GLFWwindow *window = glfwCreateWindow(640, 480, "The Grand (Re)Opening!", NULL, NULL);
+    if( !window ) {						// if the window could not be created, NULL is returned
+        fprintf( stderr, "[ERROR]: GLFW Window could not be created\n" );
+        glfwTerminate();
+        exit( EXIT_FAILURE );
+    } else {
+        fprintf( stdout, "[INFO]: GLFW Window created\n" );
+    }
 
-	glfwMakeContextCurrent(	window );	// make the created window the current window
-	glfwSwapInterval( 1 );				    // update our screen after at least 1 screen refresh
+    glfwMakeContextCurrent(	window );	// make the created window the current window
+    glfwSwapInterval( 1 );				    // update our screen after at least 1 screen refresh
 
-	glfwSetKeyCallback( 			  window, key_callback				  );	// set our keyboard callback function
-	glfwSetMouseButtonCallback( window, mouse_button_callback );	// set our mouse button callback function
-	glfwSetCursorPosCallback(	  window, cursor_callback  			);	// set our cursor position callback function
-	glfwSetScrollCallback(			window, scroll_callback			  );	// set our scroll wheel callback function
+    glfwSetKeyCallback( 			  window, key_callback				  );	// set our keyboard callback function
+    glfwSetMouseButtonCallback( window, mouse_button_callback );	// set our mouse button callback function
+    glfwSetCursorPosCallback(	  window, cursor_callback  			);	// set our cursor position callback function
+    glfwSetScrollCallback(			window, scroll_callback			  );	// set our scroll wheel callback function
 
-	return window;										// return the window that was created
+    return window;										// return the window that was created
 }
 
 // setupOpenGL() ///////////////////////////////////////////////////////////////
@@ -390,13 +405,13 @@ GLFWwindow* setupGLFW() {
 //
 ////////////////////////////////////////////////////////////////////////////////
 void setupOpenGL() {
-	glEnable( GL_DEPTH_TEST );					// enable depth testing
-	glDepthFunc( GL_LESS );							// use less than depth test
+    glEnable( GL_DEPTH_TEST );					// enable depth testing
+    glDepthFunc( GL_LESS );							// use less than depth test
 
-	glEnable(GL_BLEND);									// enable blending
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	// use one minus blending equation
+    glEnable(GL_BLEND);									// enable blending
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	// use one minus blending equation
 
-	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );	// clear the frame buffer to black
+    glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );	// clear the frame buffer to black
 }
 
 // setupGLEW() /////////////////////////////////////////////////////////////////
@@ -405,25 +420,25 @@ void setupOpenGL() {
 //
 ////////////////////////////////////////////////////////////////////////////////
 void setupGLEW() {
-	// LOOKHERE #1B
-	glewExperimental = GL_TRUE;
-	GLenum glewResult = glewInit();
+    // LOOKHERE #1B
+    glewExperimental = GL_TRUE;
+    GLenum glewResult = glewInit();
 
-	// check for an error 
-	if( glewResult != GLEW_OK ) {
-		printf( "[ERROR]: Error initalizing GLEW\n");
-		// Problem: glewInit failed, something is seriously wrong.
-		fprintf( stderr, "[ERROR]: %s\n", glewGetErrorString(glewResult) );
-		exit(EXIT_FAILURE);
-	} else {
-		 fprintf( stdout, "[INFO]: GLEW initialized\n" );
-		 fprintf( stdout, "[INFO]: Status: Using GLEW %s\n", glewGetString(GLEW_VERSION) );
-	}
+    // check for an error
+    if( glewResult != GLEW_OK ) {
+        printf( "[ERROR]: Error initalizing GLEW\n");
+        // Problem: glewInit failed, something is seriously wrong.
+        fprintf( stderr, "[ERROR]: %s\n", glewGetErrorString(glewResult) );
+        exit(EXIT_FAILURE);
+    } else {
+        fprintf( stdout, "[INFO]: GLEW initialized\n" );
+        fprintf( stdout, "[INFO]: Status: Using GLEW %s\n", glewGetString(GLEW_VERSION) );
+    }
 
-	if( !glewIsSupported( "GL_VERSION_2_0" ) ) {
-		printf( "[ERROR]: OpenGL not version 2.0+.  GLSL not supported\n" );
-		exit(EXIT_FAILURE);
-	}
+    if( !glewIsSupported( "GL_VERSION_2_0" ) ) {
+        printf( "[ERROR]: OpenGL not version 2.0+.  GLSL not supported\n" );
+        exit(EXIT_FAILURE);
+    }
 }
 
 // setupShaders() //////////////////////////////////////////////////////////////
@@ -433,65 +448,66 @@ void setupGLEW() {
 //
 ////////////////////////////////////////////////////////////////////////////////
 void setupShaders() {
-	skyboxShaderHandle = createShaderProgram("shaders/customShader.v.glsl", "shaders/customShader.f.glsl");
-	mvp_uniform_location_box = glGetUniformLocation(skyboxShaderHandle, "mvpMatrix");
-	if(mvp_uniform_location_box < 0){
-		cerr << "Error getting mvp uniform location for skybox" << endl;
-		exit(-1);
-	}
+    skyboxShaderHandle = createShaderProgram("shaders/customShader.v.glsl", "shaders/customShader.f.glsl");
+    mvp_uniform_location_box = glGetUniformLocation(skyboxShaderHandle, "mvpMatrix");
+    if(mvp_uniform_location_box < 0){
+        cerr << "Error getting mvp uniform location for skybox" << endl;
+        exit(-1);
+    }
     eye_uniform_location_box = glGetUniformLocation(skyboxShaderHandle, "eyePos");
     if(eye_uniform_location_box < 0){
         cerr << "Error getting eyepos uniform location for skybox" << endl;
         exit(-1);
     }
-	vpos_attrib_location_box = glGetAttribLocation(skyboxShaderHandle, "vPosition");
-	if(vpos_attrib_location_box < 0){
-		cerr << "Error getting vPosition for skybox" << endl;
-		exit(-1);
-	}
+    vpos_attrib_location_box = glGetAttribLocation(skyboxShaderHandle, "vPosition");
+    if(vpos_attrib_location_box < 0){
+        cerr << "Error getting vPosition for skybox" << endl;
+        exit(-1);
+    }
 
-	//for our loaded in object
-	objectShaderHandle = createShaderProgram("shaders/objShader.v.glsl", "shaders/objShader.f.glsl");
-	mvp_uniform_location_obj = glGetUniformLocation(objectShaderHandle, "mvpMatrix");
-	if(mvp_uniform_location_obj < 0){
-	    cerr << "Error getting mvp uniform location for obj" << endl;
-	    exit(-1);
-	}
-	vpos_attrib_location_obj = glGetAttribLocation(objectShaderHandle, "vPosition");
-	if(vpos_attrib_location_obj < 0){
-	    cerr << "Error getting vPosition for obj" << endl;
-	    exit(-1);
-	}
-	time_uniform_location = glGetUniformLocation(objectShaderHandle, "time");
-	if (time_uniform_location != -1) {
-		std::cout << "time loc Created" << std::endl;
-	}
-	else {
-		std::cout << "time loc Not Created" << std::endl;
-	}
-	norm_attrib_location = glGetAttribLocation(objectShaderHandle, "normal");
-	if(norm_attrib_location < 0){
-	    cerr << "Error getting object normal location" << endl;
-	    exit(-1);
-	}
-	cam_pos_location = glGetUniformLocation(objectShaderHandle, "camPos");
-	if(cam_pos_location < 0){
-	    cerr << "Error getting cam pos location" << endl;
-	    exit(-1);
-	}
+    //for our loaded in object
+    objectShaderHandle = createShaderProgram("shaders/objShader.v.glsl", "shaders/objShader.f.glsl");
+    mvp_uniform_location_obj = glGetUniformLocation(objectShaderHandle, "mvpMatrix");
+    if(mvp_uniform_location_obj < 0){
+        cerr << "Error getting mvp uniform location for obj" << endl;
+        exit(-1);
+    }
+    vpos_attrib_location_obj = glGetAttribLocation(objectShaderHandle, "vPosition");
+    if(vpos_attrib_location_obj < 0){
+        cerr << "Error getting vPosition for obj" << endl;
+        exit(-1);
+    }
+    time_uniform_location = glGetUniformLocation(objectShaderHandle, "time");
+    if (time_uniform_location != -1) {
+        std::cout << "time loc Created" << std::endl;
+    }
+    else {
+        std::cout << "time loc Not Created" << std::endl;
+    }
+    norm_attrib_location = glGetAttribLocation(objectShaderHandle, "normal");
+    norm_attrib_location = glGetAttribLocation(objectShaderHandle, "normal");
+    if(norm_attrib_location < 0){
+        cerr << "Error getting object normal location" << endl;
+        exit(-1);
+    }
+    cam_pos_location = glGetUniformLocation(objectShaderHandle, "camPos");
+    if(cam_pos_location < 0){
+        cerr << "Error getting cam pos location" << endl;
+        exit(-1);
+    }
     vdir_uniform_location_obj = glGetUniformLocation(objectShaderHandle, "dir");
     if(vdir_uniform_location_obj < 0){
         cerr << "Error getting object normal location" << endl;
         exit(-1);
     }
 
-	//set up stuff for the propeller shader
-	propShaderHandle = createShaderProgram("shaders/propShader.v.glsl", "shaders/propShader.f.glsl");
-	mvp_uniform_location_prop = glGetUniformLocation(propShaderHandle, "mvpMatrix");
-	vpos_attrib_location_prop = glGetAttribLocation(propShaderHandle, "vPosition");
-	norm_attrib_location_prop = glGetAttribLocation(propShaderHandle, "normal");
-	cam_pos_location_prop = glGetUniformLocation(propShaderHandle, "camPos");
-	rotation_location_prop = glGetUniformLocation(propShaderHandle, "rotation");
+    //set up stuff for the propeller shader
+    propShaderHandle = createShaderProgram("shaders/propShader.v.glsl", "shaders/propShader.f.glsl");
+    mvp_uniform_location_prop = glGetUniformLocation(propShaderHandle, "mvpMatrix");
+    vpos_attrib_location_prop = glGetAttribLocation(propShaderHandle, "vPosition");
+    norm_attrib_location_prop = glGetAttribLocation(propShaderHandle, "normal");
+    cam_pos_location_prop = glGetUniformLocation(propShaderHandle, "camPos");
+    rotation_location_prop = glGetUniformLocation(propShaderHandle, "rotation");
 }
 
 // setupBuffers() //////////////////////////////////////////////////////////////
@@ -568,7 +584,6 @@ unsigned int loadCubeMap(vector<string> faces){
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
     for(unsigned int i = 0; i < faces.size(); i++){
-        cout << i << endl;
         int width, height, n;
         unsigned char* imageData = SOIL_load_image(faces[i].c_str(), &width, &height, &n, 0);
         if (!imageData) {
@@ -598,9 +613,6 @@ void setupTextures(){
                             "textures/skybox/hw_sahara/posz.jpg", "textures/skybox/hw_sahara/negz.jpg"};
     skyboxID = loadCubeMap(faces);
     sandboxID = loadCubeMap(sand);
-//    ground.setTexHandle(sandboxID);
-
-    cout << skyboxID << " handle " << sandboxID << endl;
 }
 
 
@@ -653,28 +665,28 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
 
 
     //draw the uav
-  // stores our model matrix
+    // stores our model matrix
 
-  modelMtx = glm::mat4(1.0f);
-  modelMtx = glm::translate(modelMtx, objectPosistion);
+    modelMtx = glm::mat4(1.0f);
+    modelMtx = glm::translate(modelMtx, objectPosistion);
 
-  modelMtx = glm::scale(modelMtx, glm::vec3(15.0f, 15.0f, 15.0f)); //scale our object
-  modelMtx = glm::rotate(modelMtx, objectRotation.x, glm::vec3(1.0f, 0.0f, 0.0f)); //rotate the object
-  modelMtx = glm::rotate(modelMtx, objectRotation.y, glm::vec3(0.0f, 1.0f, 0.0f)); //rotate the object
-  modelMtx = glm::rotate(modelMtx, objectRotation.z, glm::vec3(0.0f, 0.0f, 1.0f)); //rotate the object
-  
+    modelMtx = glm::scale(modelMtx, glm::vec3(15.0f, 15.0f, 15.0f)); //scale our object
+    modelMtx = glm::rotate(modelMtx, objectRotation.x, glm::vec3(1.0f, 0.0f, 0.0f)); //rotate the object
+    modelMtx = glm::rotate(modelMtx,objectRotation.y, glm::vec3(0.0f, 1.0f, 0.0f)); //rotate the object
+    modelMtx = glm::rotate(modelMtx, objectRotation.z, glm::vec3(0.0f, 0.0f, 1.0f)); //rotate the object
+
     // precompute our MVP CPU side so it only needs to be computed once
     mvpMtx = projMtx * viewMtx * modelMtx;
     //draw the model that we loaded in
     glUseProgram(objectShaderHandle);
     // send MVP to GPU
     glUniformMatrix4fv(mvp_uniform_location_obj, 1, GL_FALSE, &mvpMtx[0][0]);
-	double time = glfwGetTime();
-	glUniform1f(time_uniform_location, time);
+    double time = glfwGetTime();
+    glUniform1f(time_uniform_location, time);
     //send camera pos to GPU
     glUniform3fv(cam_pos_location, 1, &objectPosistion[0]);
     glUniform3fv(vdir_uniform_location_obj, 1, &objectDirection[0]);
-	
+
     model->draw(vpos_attrib_location_obj, norm_attrib_location);
 
     //reset model and mvp mtx to draw skybox
@@ -685,23 +697,23 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
     //////////////////////////////////
     //SKYBOX STUFF
     ////////////////////////////////
-  // use our skybox shader program
-  glUseProgram(skyboxShaderHandle);
+    // use our skybox shader program
+    glUseProgram(skyboxShaderHandle);
     glUniformMatrix4fv(mvp_uniform_location_box, 1, GL_FALSE, &mvpMtx[0][0]);
     glUniform3fv(eye_uniform_location_box, 1, &eyePoint[0]);
 
-  glDepthFunc(GL_LEQUAL);
-  //glDepthMask(GL_FALSE);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxID);
-  glBindVertexArray(skyboxVAO);
-  glDrawArrays(GL_TRIANGLES, 0, 36);
-  
+    glDepthFunc(GL_LEQUAL);
+    //glDepthMask(GL_FALSE);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxID);
+    glBindVertexArray(skyboxVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
     glBindTexture(GL_TEXTURE_CUBE_MAP, sandboxID);
     ground.draw(mvpMtx, mvp_uniform_location_box);
 
-  //glDepthMask(GL_TRUE);
-  glDepthFunc(GL_LESS);
+    //glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
 }
 
 ///*****************************************************************************
@@ -714,106 +726,122 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
 //
 ////////////////////////////////////////////////////////////////////////////////
 int main( int argc, char *argv[] ) {
-  // ensure proper number of arguments provided at runtime
-	if( argc != 2 ) {
-    // we need an object file
-		fprintf( stderr, "Usage: ./a5 <wavefrontObjectFile.obj>\n" );
-		exit(EXIT_FAILURE);
-	}
+    // ensure proper number of arguments provided at runtime
+    if( argc != 2 ) {
+        // we need an object file
+        fprintf( stderr, "Usage: ./a5 <wavefrontObjectFile.obj>\n" );
+        exit(EXIT_FAILURE);
+    }
 
-  // GLFW sets up our OpenGL context so must be done first
-	GLFWwindow *window = setupGLFW();	// initialize all of the GLFW specific information releated to OpenGL and our window
-	setupOpenGL();										// initialize all of the OpenGL specific information
+    // GLFW sets up our OpenGL context so must be done first
+    GLFWwindow *window = setupGLFW();	// initialize all of the GLFW specific information releated to OpenGL and our window
+    setupOpenGL();										// initialize all of the OpenGL specific information
 
-	setupGLEW();											// initialize all of the GLEW specific information
-	recomputeOrientation();
+    setupGLEW();											// initialize all of the GLEW specific information
+    recomputeOrientation();
 
-  CSCI441::OpenGLUtils::printOpenGLInfo();
+    CSCI441::OpenGLUtils::printOpenGLInfo();
 
-  setupTextures();  //load and set up textures for skybox
+    setupTextures();  //load and set up textures for skybox
 
-  setupShaders(); // load our shader program into memory
+    setupShaders(); // load our shader program into memory
     // load all our VAOs and VBOs into memory
     string in = argv[1];
-  if(in == "submarine.obj"){
-      setupBuffers("models/submarine.obj");
-  }
-  else if(in == "suzanne.obj"){
-      setupBuffers("models/suzanne.obj");
-  }
-  else if(in == "chair.obj"){
-      setupBuffers("models/chair.obj");
-  }
-  else if(in == "Plane.obj"){
-      setupBuffers("models/Plane.obj");
-  }
-  else if(in == "cargo.obj"){
-      setupBuffers("models/cargo.obj");
-  }
-  else if(in == "MQ-9.obj"){
-      setupBuffers("models/MQ-9.obj");
-  }
-  else if(in == "uh60.obj"){
-      setupBuffers("models/uh60.obj");
-  }
-  else{
-      fprintf(stderr, "Unable to find that file\n");
-      exit(-1);
-  }
+    if(in == "submarine.obj"){
+        setupBuffers("models/submarine.obj");
+    }
+    else if(in == "suzanne.obj"){
+        setupBuffers("models/suzanne.obj");
+    }
+    else if(in == "chair.obj"){
+        setupBuffers("models/chair.obj");
+    }
+    else if(in == "Plane.obj"){
+        setupBuffers("models/Plane.obj");
+    }
+    else if(in == "cargo.obj"){
+        setupBuffers("models/cargo.obj");
+    }
+    else if(in == "MQ-9.obj"){
+        setupBuffers("models/MQ-9.obj");
+    }
+    else if(in == "uh60.obj"){
+        setupBuffers("models/uh60.obj");
+    }
+    else{
+        fprintf(stderr, "Unable to find that file\n");
+        exit(-1);
+    }
 
-  // needed to connect our 3D Object Library to our shader
-	CSCI441::setVertexAttributeLocations( vpos_attrib_location_obj, norm_attrib_location );
+    // needed to connect our 3D Object Library to our shader
+    CSCI441::setVertexAttributeLocations( vpos_attrib_location_obj, norm_attrib_location );
     CSCI441::setVertexAttributeLocations(vpos_attrib_location_prop, norm_attrib_location_prop);
 
-	//convertSphericalToCartesian();		// set up our camera position
+    //convertSphericalToCartesian();		// set up our camera position
 
-  //  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
-	//	until the user decides to close the window and quit the program.  Without a loop, the
-	//	window will display once and then the program exits.
-	while( !glfwWindowShouldClose(window) ) {	// check if the window was instructed to be closed
-    glDrawBuffer( GL_BACK );				// work with our back frame buffer
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );	// clear the current color contents and depth buffer in the window
+    //  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
+    //	until the user decides to close the window and quit the program.  Without a loop, the
+    //	window will display once and then the program exits.
+    while( !glfwWindowShouldClose(window) ) {	// check if the window was instructed to be closed
+        glDrawBuffer( GL_BACK );				// work with our back frame buffer
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );	// clear the current color contents and depth buffer in the window
 
-		// Get the size of our framebuffer.  Ideally this should be the same dimensions as our window, but
-		// when using a Retina display the actual window can be larger than the requested window.  Therefore
-		// query what the actual size of the window we are rendering to is.
-		glfwGetFramebufferSize( window, &windowWidth, &windowHeight );
+        // Get the size of our framebuffer.  Ideally this should be the same dimensions as our window, but
+        // when using a Retina display the actual window can be larger than the requested window.  Therefore
+        // query what the actual size of the window we are rendering to is.
+        glfwGetFramebufferSize( window, &windowWidth, &windowHeight );
 
-		// update the viewport - tell OpenGL we want to render to the whole window
-		glViewport( 0, 0, windowWidth, windowHeight );
+        // update the viewport - tell OpenGL we want to render to the whole window
+        glViewport( 0, 0, windowWidth, windowHeight );
 
-		// set the projection matrix based on the window size
-		// use a perspective projection that ranges
-		// with a FOV of 45 degrees, for our current aspect ratio, and Z ranges from [0.001, 1000].
-		glm::mat4 projectionMatrix = glm::perspective( 45.0f, windowWidth / (float) windowHeight, 0.001f, 100.0f );
+        // set the projection matrix based on the window size
+        // use a perspective projection that ranges
+        // with a FOV of 45 degrees, for our current aspect ratio, and Z ranges from [0.001, 1000].
+        glm::mat4 projectionMatrix = glm::perspective( 45.0f, windowWidth / (float) windowHeight, 0.001f, 100.0f );
 
-		// set up our look at matrix to position our camera
-	std:cout << objectDirection.x << " " << objectDirection.y << " " << objectDirection.z << std::endl;
+        // set up our look at matrix to position our camera
+//        std:cout << objectDirection.x << " " << objectDirection.y << " " << objectDirection.z << std::endl;
 //        std:cout << objectPosistion.x << " " << objectPosistion.y << " " << objectPosistion.z << std::endl;
         glm::mat4 viewMatrix;
-	    if(camSwap) {
+
+        if(camSwap) {
             upVector = glm::vec3(    0.0f,  1.0f,  0.0f );
-            viewMatrix = glm::lookAt(eyePoint,
-                                               glm::vec3(objectPosistion.x, objectPosistion.y, objectPosistion.z),
-                                               upVector );
+            lookAtPoint = glm::vec3(objectPosistion.x, objectPosistion.y, objectPosistion.z);
         } else {
-//            upVector = glm::vec3(    objectRotation.x,  1.0f, 0.0f);
-            viewMatrix = glm::lookAt(glm::vec3(objectPosistion.x, objectPosistion.y+1, objectPosistion.z),
-                                     glm::vec3(objectPosistion.x, objectPosistion.y- objectDirection.y+1, objectPosistion.z- objectDirection.z),
-                                               upVector );
-	    }
+//            glm::vec3 eyeOffset = glm::cross(glm::vec3(0, 0, sin(objectRotation.x)), glm::vec3(sin(objectRotation.z), 0, 0));
+//            if(glm::length(eyeOffset) != 0) eyeOffset = glm::normalize(eyeOffset);
+//            cout << glm::length(eyeOffset) << endl;
 
-		// draw everything to the window
-		// pass our view and projection matrices as well as deltaTime between frames
-		renderScene( viewMatrix, projectionMatrix );
+            glm::mat4 modelMtx = glm::mat4(1.0f);
+//            modelMtx = glm::translate(modelMtx, objectPosistion);
 
-		glfwSwapBuffers(window);// flush the OpenGL commands and make sure they get rendered!
-		glfwPollEvents();				// check for any events and signal to redraw screen
-		animate();
-	}
+//            modelMtx = glm::scale(modelMtx, glm::vec3(15.0f, 15.0f, 15.0f)); //scale our object
+            modelMtx = glm::rotate(modelMtx, objectRotation.x, glm::vec3(1.0f, 0.0f, 0.0f)); //rotate the object
+            modelMtx = glm::rotate(modelMtx,objectRotation.y, glm::vec3(0.0f, 1.0f, 0.0f)); //rotate the object
+            modelMtx = glm::rotate(modelMtx, objectRotation.z, glm::vec3(0.0f, 0.0f, 1.0f)); //rotate the object
 
-  glfwDestroyWindow( window );// clean up and close our window
-  glfwTerminate();						// shut down GLFW to clean up our context
+            glm::vec4 eyeOffset4(0, 3, 3, 1);
+            upVector = glm::vec3(0, sin(objectRotation.x) > 0 ? -1 : 1, 0);
+            cout<<objectRotation.x<<endl;
+            eyeOffset4 = eyeOffset4 * modelMtx;
+            glm::vec3 eyeOffset(eyeOffset4.x, eyeOffset4.y, eyeOffset4.z);
 
-	return EXIT_SUCCESS;
+            eyePoint = glm::vec3(objectPosistion.x, objectPosistion.y+1, objectPosistion.z) + eyeOffset;
+            lookAtPoint = glm::vec3(objectPosistion.x, objectPosistion.y- objectDirection.y+1, objectPosistion.z- objectDirection.z) + eyeOffset;
+        }
+        viewMatrix = glm::lookAt(eyePoint, lookAtPoint, upVector);
+
+        // draw everything to the window
+        // pass our view and projection matrices as well as deltaTime between frames
+        renderScene( viewMatrix, projectionMatrix );
+
+        glfwSwapBuffers(window);// flush the OpenGL commands and make sure they get rendered!
+        glfwPollEvents();				// check for any events and signal to redraw screen
+        animate();
+    }
+
+    glfwDestroyWindow( window );// clean up and close our window
+    glfwTerminate();						// shut down GLFW to clean up our context
+
+    return EXIT_SUCCESS;
 }
