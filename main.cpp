@@ -48,12 +48,17 @@ int windowWidth, windowHeight;
 
 bool controlDown = false;
 bool leftMouseDown = false;
+bool keysDown[256] = { 0 };           // status of our keys
+
 glm::vec2 mousePosition( -9999.0f, -9999.0f );
 
-glm::vec3 cameraAngles( 1.82f, 2.01f, 15.0f );
-glm::vec3 eyePoint(   10.0f, 10.0f, 10.0f );
+glm::vec3 cameraAngles( 0.0f, 2.01f, 15.0f );
+glm::vec3 eyePoint(   0.0f, 10.0f, 10.0f );
 glm::vec3 lookAtPoint( 0.0f,  0.0f,  0.0f );
 glm::vec3 upVector(    0.0f,  1.0f,  0.0f );
+glm::vec3 objectRotation(4.7124f, 0.0f, 0.0f);
+glm::vec3 objectDirection(0.0f, 0.0f, 0.5f);
+glm::vec3 objectPosistion(0.0f, 0.0f, 0.0f);
 
 CSCI441::ModelLoader* model = NULL;
 
@@ -67,11 +72,13 @@ GLint mvp_uniform_location_obj = -1;
 GLint vpos_attrib_location_obj = -1;
 GLint norm_attrib_location = -1;
 GLint cam_pos_location = -1;
+GLint time_uniform_location = -1;
 
 //vbo and vao for skybox
 GLuint skyboxVBO;
 GLuint skyboxVAO;
 unsigned int skyboxID; //holds texture
+struct Vertex { GLfloat x, y, z; };
 
 //******************************************************************************
 //
@@ -84,10 +91,21 @@ unsigned int skyboxID; //holds texture
 //  cameraAngles is updated.
 //
 ////////////////////////////////////////////////////////////////////////////////
-void convertSphericalToCartesian() {
-	eyePoint.x = cameraAngles.z * sinf( cameraAngles.x ) * sinf( cameraAngles.y );
-	eyePoint.y = cameraAngles.z * -cosf( cameraAngles.y );
-	eyePoint.z = cameraAngles.z * -cosf( cameraAngles.x ) * sinf( cameraAngles.y );
+void recomputeCameraOrientation() {
+	eyePoint.x = 10 * sinf( cameraAngles.x ) * sinf( cameraAngles.y ) + objectPosistion.x;
+	eyePoint.y = 10 * -cosf( cameraAngles.y ) + objectPosistion.y;
+	eyePoint.z = 10 * -cosf( cameraAngles.x ) * sinf( cameraAngles.y ) + objectPosistion.z;
+
+	
+}
+
+void recomputeOrientation() {
+	objectDirection.x = sinf(objectRotation.y) * sinf(objectRotation.x);
+	objectDirection.z = cosf(objectRotation.y) * sinf(objectRotation.x);
+	objectDirection.y = cosf(objectRotation.x);
+
+	//and normalize this directional vector!
+	objectDirection = glm::normalize(objectDirection);
 }
 
 //******************************************************************************
@@ -113,26 +131,26 @@ static void error_callback(int error, const char* description) {
 //
 ////////////////////////////////////////////////////////////////////////////////
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	if ((key == GLFW_KEY_ESCAPE || key == 'Q') && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	if (action == GLFW_PRESS) {
+		switch (key) {
+		case GLFW_KEY_ESCAPE:
+		case GLFW_KEY_Q:
+			glfwSetWindowShouldClose(window, GLFW_TRUE);
+			break;
+		case GLFW_KEY_1:
+			//lightOne = !(lightOne);
+			break;
 
-  if( action == GLFW_PRESS ) {
-    switch( key ) {
-      case GLFW_KEY_ESCAPE:
-      case GLFW_KEY_Q:
-        glfwSetWindowShouldClose( window, GLFW_TRUE );
-        break;
+		case GLFW_KEY_2:
+			//lightTwo = !(lightTwo);
 
-      case GLFW_KEY_1:
-      case GLFW_KEY_2:
-      case GLFW_KEY_3:
-      case GLFW_KEY_4:
-      case GLFW_KEY_5:
-      case GLFW_KEY_6:
-      case GLFW_KEY_7:
-        break;
-    }
-  }
+		default:
+			keysDown[key] = true;
+		}
+	}
+	else if (action == GLFW_RELEASE) {
+		keysDown[key] = false;
+	}
 }
 
 // mouse_button_callback() /////////////////////////////////////////////////////
@@ -151,7 +169,57 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 		mousePosition.x = -9999.0f;
 		mousePosition.y = -9999.0f;
 	}
-  controlDown = mods & GLFW_MOD_CONTROL;
+  //controlDown = mods & GLFW_MOD_CONTROL;
+}
+void animate() {
+	recomputeCameraOrientation();
+	recomputeOrientation();
+	//because the direction vector is unit length, and we probably don't want
+	//to move one full unit every time a button is pressed, just create a constant
+	//to keep track of how far we want to move at each step. you could make
+	//this change w.r.t. the amount of time the button's held down for
+	//simple scale-sensitive movement!
+	const float movementConstant = 0.1f;
+
+	if (keysDown[GLFW_KEY_SPACE]) {
+		objectPosistion.x -= objectDirection.x * movementConstant;
+		objectPosistion.y -= objectDirection.y * movementConstant;
+		objectPosistion.z -= objectDirection.z * movementConstant;
+		//just move FORWARDS along the direction.
+		//camPos.x += camDir.x * movementConstant;
+		//camPos.y += camDir.y * movementConstant;
+		//camPos.z += camDir.z * movementConstant;
+
+		//propAngle += M_PI / 16.0f;
+		//if (propAngle > 2 * M_PI) propAngle -= 2 * M_PI;
+
+	}
+	if (keysDown[GLFW_KEY_S]) {
+		objectRotation.x -= 0.01;
+		recomputeOrientation();
+	}
+
+	if (keysDown[GLFW_KEY_W]) {
+		objectRotation.x += 0.01;
+		recomputeOrientation();
+	}
+
+	if (keysDown[GLFW_KEY_D]) {
+		// turn right
+		if (objectRotation.y > -.85) {
+			objectRotation.y -= 0.01;
+		}
+		//cameraAngles.z += 0.01;
+	}
+
+	if (keysDown[GLFW_KEY_A]) {
+		// turn left
+		if (objectRotation.y < .85) {
+			objectRotation.y += 0.01;
+		}
+		//cameraAngles.z -= 0.01;
+	}
+
 }
 
 // cursor_callback() ///////////////////////////////////////////////////////////
@@ -185,7 +253,7 @@ static void cursor_callback(GLFWwindow* window, double xpos, double ypos) {
 						if( cameraAngles.z <= 2.0f ) cameraAngles.z = 2.0f;
 						if( cameraAngles.z >= 50.0f ) cameraAngles.z = 50.0f;
 					}
-					convertSphericalToCartesian();
+					//convertSphericalToCartesian();
 
 					mousePosition.x = xpos;
 					mousePosition.y = ypos;
@@ -213,7 +281,7 @@ static void scroll_callback(GLFWwindow* window, double xOffset, double yOffset )
 	if( cameraAngles.z <= 2.0f ) cameraAngles.z = 2.0f;
 	if( cameraAngles.z >= 50.0f ) cameraAngles.z = 50.0f;
 
-	convertSphericalToCartesian();
+	//convertSphericalToCartesian();
 }
 
 //******************************************************************************
@@ -338,6 +406,13 @@ void setupShaders() {
 	if(vpos_attrib_location_obj < 0){
 	    cerr << "Error getting vPosition for obj" << endl;
 	    exit(-1);
+	}
+	time_uniform_location = glGetUniformLocation(objectShaderHandle, "time");
+	if (time_uniform_location != -1) {
+		std::cout << "time loc Created" << std::endl;
+	}
+	else {
+		std::cout << "time loc Not Created" << std::endl;
 	}
 	norm_attrib_location = glGetAttribLocation(objectShaderHandle, "normal");
 	if(norm_attrib_location < 0){
@@ -465,9 +540,12 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
     ////////////////////////////
   // stores our model matrix
   glm::mat4 modelMtx = glm::mat4(1.0f);
+  modelMtx = glm::translate(modelMtx, objectPosistion);
   modelMtx = glm::scale(modelMtx, glm::vec3(15.0f, 15.0f, 15.0f)); //scale our object
-  modelMtx = glm::rotate(modelMtx, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f)); //rotate the object
-
+  modelMtx = glm::rotate(modelMtx, objectRotation.x, glm::vec3(1.0f, 0.0f, 0.0f)); //rotate the object
+  modelMtx = glm::rotate(modelMtx, objectRotation.y, glm::vec3(0.0f, 1.0f, 0.0f)); //rotate the object
+  modelMtx = glm::rotate(modelMtx, objectRotation.z, glm::vec3(0.0f, 0.0f, 1.0f)); //rotate the object
+  
     // precompute our MVP CPU side so it only needs to be computed once
     glm::mat4 mvpMtx = projMtx * viewMtx * modelMtx;
     //draw the model that we loaded in
@@ -475,8 +553,11 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
 
     // send MVP to GPU
     glUniformMatrix4fv(mvp_uniform_location_obj, 1, GL_FALSE, &mvpMtx[0][0]);
+	double time = glfwGetTime();
+	glUniform1f(time_uniform_location, time);
     //send camera pos to GPU
-    glUniform3fv(cam_pos_location, 1, &eyePoint[0]);
+    glUniform3fv(cam_pos_location, 1, &objectPosistion[0]);
+	
     model->draw(vpos_attrib_location_obj, norm_attrib_location);
 
     //reset model and mvp mtx to draw skybox
@@ -523,6 +604,7 @@ int main( int argc, char *argv[] ) {
 	setupOpenGL();										// initialize all of the OpenGL specific information
 
 	setupGLEW();											// initialize all of the GLEW specific information
+	recomputeOrientation();
 
   CSCI441::OpenGLUtils::printOpenGLInfo();
 
@@ -560,7 +642,7 @@ int main( int argc, char *argv[] ) {
   // needed to connect our 3D Object Library to our shader
 	CSCI441::setVertexAttributeLocations( vpos_attrib_location_obj, norm_attrib_location );
 
-	convertSphericalToCartesian();		// set up our camera position
+	//convertSphericalToCartesian();		// set up our camera position
 
   //  This is our draw loop - all rendering is done here.  We use a loop to keep the window open
 	//	until the user decides to close the window and quit the program.  Without a loop, the
@@ -583,7 +665,10 @@ int main( int argc, char *argv[] ) {
 		glm::mat4 projectionMatrix = glm::perspective( 45.0f, windowWidth / (float) windowHeight, 0.001f, 100.0f );
 
 		// set up our look at matrix to position our camera
-		glm::mat4 viewMatrix = glm::lookAt( eyePoint,lookAtPoint, upVector );
+	std:cout << objectDirection.x << " " << objectDirection.y << " " << objectDirection.z << std::endl;
+		glm::mat4 viewMatrix = glm::lookAt(eyePoint,
+										   glm::vec3(objectPosistion.x, objectPosistion.y, objectPosistion.z),
+										   upVector );
 
 		// draw everything to the window
 		// pass our view and projection matrices as well as deltaTime between frames
@@ -591,6 +676,7 @@ int main( int argc, char *argv[] ) {
 
 		glfwSwapBuffers(window);// flush the OpenGL commands and make sure they get rendered!
 		glfwPollEvents();				// check for any events and signal to redraw screen
+		animate();
 	}
 
   glfwDestroyWindow( window );// clean up and close our window
