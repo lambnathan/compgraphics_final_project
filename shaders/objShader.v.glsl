@@ -11,6 +11,7 @@ out vec3 theColor;
 uniform mat4 mvpMatrix;
 uniform vec3 camPos;
 uniform float time;
+uniform vec3 dir;
 
 void main(){
     vec3 lightColor = vec3(1.0, 1.0, 1.0); //white
@@ -41,8 +42,9 @@ void main(){
 
     theColor = result;
     vec3 newVertex = vPosition;
+
     if(vPosition.x > 0.05 || vPosition.x < -0.05){
-	newVertex.z = (vPosition.x*vPosition.x)*sin(25*time)*3;
+	newVertex.z = (vPosition.x*vPosition.x)*sin(25*abs(dir.y)*time)*3;
     }
 
 
