@@ -583,12 +583,13 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
 
     //draw the propeller DO NOT CHANGE ANY OF THESE TRANSFORMATIONS
     glm::mat4 modelMtx = glm::mat4(1.0f);
-    modelMtx = glm::translate(modelMtx, glm::vec3(-0.052f, -0.3f, 1.25f));
-	modelMtx = glm::translate(modelMtx, objectPosistion);
+    modelMtx = glm::translate(modelMtx, objectPosistion);
     //modelMtx = glm::rotate(modelMtx, glm::radians(270.0f), glm::vec3(1.0, 0.0, 0.0));
-	modelMtx = glm::rotate(modelMtx, objectRotation.x, glm::vec3(1.0f, 0.0f, 0.0f)); //rotate the object
-	modelMtx = glm::rotate(modelMtx, objectRotation.y, glm::vec3(0.0f, 1.0f, 0.0f)); //rotate the object
-	modelMtx = glm::rotate(modelMtx, objectRotation.z, glm::vec3(0.0f, 0.0f, 1.0f)); //rotate the object
+    modelMtx = glm::rotate(modelMtx, objectRotation.x, glm::vec3(1.0f, 0.0f, 0.0f)); //rotate the object
+    modelMtx = glm::rotate(modelMtx, objectRotation.y, glm::vec3(0.0f, 1.0f, 0.0f)); //rotate the object
+    modelMtx = glm::rotate(modelMtx, objectRotation.z, glm::vec3(0.0f, 0.0f, 1.0f)); //rotate the object
+    modelMtx = glm::translate(modelMtx, glm::vec3(-0.06f, -1.2f, -0.35f)); //z changes y, y changes z?
+
     modelMtx = glm::scale(modelMtx, glm::vec3(0.1, 0.1, 0.1));
 
     modelMtx = glm::translate(modelMtx, glm::vec3(0.0f, 0.0f, 2.9f));
