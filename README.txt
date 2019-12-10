@@ -1,10 +1,11 @@
 Nathan Lambert, David Fresco, Alex Michael, Eric Klatzco
+nlambert, drfresco, ajmichael, eklatzco ::: all @mines.edu
 Team Name: Something Something Danger Zone
 Final Project - The Grand (Re)Opening!
 
 Description: This program allows you to fly a cute propellor plane around the scenic Arizona desert. View the low-resolution 
 world from the sky and watch your adorable aircraft climb high into the atmosphere. Watch the propellor spin around
-at dizzying speeds, and see how the wing flaps will react to steering in different directions.The sun will
+at dizzying speeds, and see how the wing flaps will react to climbinb and falling.The sun will
 illuminate the tepid sand until it is eventually replaced in a cruel twist of fate by the grace of the moon herself. 
 The user can watch as objects far in the distance fade to match the hazy horizon with a seductive fragment shader.
 
@@ -16,12 +17,16 @@ is in both the main project folder and cmake-build-debug, and set the project pa
 
 There is no input configuration file that the program reads.
 
+Bugs: Flying is bit wonky.
+
 Distribution of responsibilities:
 Nathan - Set up github repo, found and loaded the skybox and all the models, positioned models, animated propeller, documentation
-Eric - Did day/night lighting cycle, 
+Eric - Did day/night lighting cycle, texturing on plane, debugging, 
 Alex - object movement, camera views, UAV animation, 
-David - Fog, generated ground with new textures
+David - Fog, generated ground with new textures, 
 
-This assignment took us about 
+This assignment took us about about 30 hours between the 4 of us
 
-This assignment was 7/10
+Labs: 3/10. Some helped but it's a final, open-ended project.
+
+This assignment was 6/10
