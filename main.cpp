@@ -78,6 +78,9 @@ GLint mvp_uniform_location_box = -1;
 GLint eye_uniform_location_box = -1;
 GLint vpos_attrib_location_box = -1;
 GLint time_uniform_location_box = -1;
+GLint playerPosLocation = -1;
+GLint playerDirLocation = -1;
+GLint mvMatrix = -1;
 
 //atribute locations for uav
 GLint mvp_uniform_location_obj = -1;
@@ -612,7 +615,7 @@ unsigned int loadCubeMap(vector<string> faces){
     return textureID;
 }
 
-GLuint TextureUtils::loadAndRegisterTexture(const char *filename) {
+GLuint loadAndRegisterTexture(const char *filename) {
     GLuint texHandle = SOIL_load_OGL_texture( filename,
                                               SOIL_LOAD_AUTO,
                                               SOIL_CREATE_NEW_ID,
@@ -712,7 +715,7 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
     glUseProgram(objectShaderHandle);
     // send MVP to GPU
 
-
+    glm::mat4 mvMtx = glm::mat4(1) * modelMtx;
     glUniformMatrix4fv(mvp_uniform_location_obj, 1, GL_FALSE, &mvpMtx[0][0]);
     double time = glfwGetTime();
     glUniform1f(time_uniform_location, time);
@@ -735,6 +738,8 @@ void renderScene( glm::mat4 viewMtx, glm::mat4 projMtx ) {
     // use our skybox shader program
     glUseProgram(skyboxShaderHandle);
     glUniformMatrix4fv(mvp_uniform_location_box, 1, GL_FALSE, &mvpMtx[0][0]);
+    glUniform3fv(playerPosLocation, 1, &objectPosistion[0]);
+    glUniform3fv(playerDirLocation, 1, &objectDirection[0]);
     glUniform3fv(eye_uniform_location_box, 1, &eyePoint[0]);
     glUniform1f(time_uniform_location_box, time);
 
