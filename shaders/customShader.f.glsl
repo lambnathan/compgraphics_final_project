@@ -18,7 +18,7 @@ out vec4 fragColorOut;
 void main() {
 
 	vec4 theColor = texture(skybox, texCoords);
-	vec4 fogColor = vec4(.75*(cos(.25*time)+0.05), .75*(cos(.25*time)+0.05), 1*(cos(.25*time)+0.05), 1);
+	vec4 fogColor = vec4(.75*(cos(.25*time)+0.25), .75*(cos(.25*time)+0.25), 1*(cos(.25*time)+0.25), 1);
 	float fogDist = 100;
 
 	float distFromCamera = distance(fragPos.xyz, camPos);
