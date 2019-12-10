@@ -15,7 +15,6 @@ out vec3 camPos;
 uniform vec3 eyePos;
 uniform mat4 mvpMatrix;
 
-
 void main() {
     //*****************************************
     //********* Vertex Calculations  **********
@@ -25,4 +24,6 @@ void main() {
     camPos = eyePos; 
     fragPos = mvpMatrix * vec4(vPosition, 1.0);
     gl_Position = mvpMatrix * vec4(vPosition, 1.0);
+
+
 }

@@ -21,7 +21,7 @@ void main() {
 	vec4 fogColor = vec4(.75*(cos(.25*time)+0.05), .75*(cos(.25*time)+0.05), 1*(cos(.25*time)+0.05), 1);
 	float fogDist = 100;
 
-	float distFromCamera = distance(vec3(fragPos.x, fragPos.y, fragPos.z), camPos);
+	float distFromCamera = distance(fragPos.xyz, camPos);
 
 	if(distFromCamera > fogDist) {
 		fragColorOut = fogColor;
@@ -30,4 +30,5 @@ void main() {
 		float currentColorMult = 1.0 - fogColorMult;
 		fragColorOut = (currentColorMult * theColor) + (fogColorMult * fogColor);
 	}
+	if(distFromCamera < 20) fragColorOut += vec4(.1);
 }
