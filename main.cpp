@@ -31,6 +31,7 @@
 #include <CSCI441/modelLoader3.hpp> // to load in OBJ models
 #include <CSCI441/OpenGLUtils3.hpp> // to print info about OpenGL
 #include <CSCI441/objects3.hpp>     // to render our 3D primitives
+#include <CSCI441/TextureUtils.hpp>
 
 #include "include/Shader_Utils.h"   // our shader helper functions
 #include "include/Terrain.h"
@@ -611,6 +612,26 @@ unsigned int loadCubeMap(vector<string> faces){
     return textureID;
 }
 
+GLuint TextureUtils::loadAndRegisterTexture(const char *filename) {
+    GLuint texHandle = SOIL_load_OGL_texture( filename,
+                                              SOIL_LOAD_AUTO,
+                                              SOIL_CREATE_NEW_ID,
+                                              SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_COMPRESS_TO_DXT );
+
+    if( texHandle == 0 ) {
+        printf( "[ERROR]: Could not load texture \"%s\"\n[SOIL]: %s\n\n", filename, SOIL_last_result() );
+    } else {
+        printf( "[INFO]: Successfully loaded texture \"%s\"\n[SOIL]: %s\n\n", filename, SOIL_last_result() );
+        glBindTexture(   GL_TEXTURE_2D,  texHandle );
+        glTexParameteri( GL_TEXTURE_2D,  GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D,  GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D,  GL_TEXTURE_WRAP_S,     GL_REPEAT );
+        glTexParameteri( GL_TEXTURE_2D,  GL_TEXTURE_WRAP_T,     GL_REPEAT );
+    }
+
+    return texHandle;
+}
+
 //load all of our textures into memory
 void setupTextures(){
     //get skybox texture by loading all the images
@@ -622,7 +643,7 @@ void setupTextures(){
     skyboxID = loadCubeMap(faces);
     sandboxID = loadCubeMap(sand);
 
-    modelTextureHandle = CSCI441::TextureUtils::loadAndRegisterTexture("textures/metal.jpg");
+    modelTextureHandle = loadAndRegisterTexture("textures/metal.jpg");
 }
 
 
